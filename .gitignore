@@ -1,0 +1,6 @@
+images/
+audios/
+
+# backend
+backend/.venv/
+backend/__pycache__/
