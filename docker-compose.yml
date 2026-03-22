@@ -1,20 +1,19 @@
 services:
     # --- Microservicio de YOLO ---
-    yolo:
-        build: ./servicio_yolo
-        container_name: yolo_container
-        ports:
-        - "8001:8001"
-        restart: unless-stopped
-
-
-    # --- Microservicio de YOLOE ---
-#    yoloe:
-#        build: ./servicio_yoloe
-#        container_name: yoloe_container
+#    yolo:
+#        build: ./servicio_yolo
+#        container_name: yolo_container
 #        ports:
 #        - "8001:8001"
 #        restart: unless-stopped
+
+    # --- Microservicio de YOLOE ---
+    yoloe:
+        build: ./servicio_yoloe
+        container_name: yoloe_container
+        ports:
+        - "8001:8001"
+        restart: unless-stopped
 
     # --- Microservicio de MiDaS ---
     midas:
@@ -48,7 +47,7 @@ services:
         - URL_MIDAS=http://midas:8002/depth
         - URL_LLM=http://llm:8080/v1/chat/completions
         depends_on:
-        - yolo
-#        - yoloe
+#        - yolo
+        - yoloe
         - midas
         - llm
