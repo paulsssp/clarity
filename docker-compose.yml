@@ -43,7 +43,7 @@ services:
         - "8000:8000"
         restart: unless-stopped
         environment:
-        - URL_YOLO=http://yolo:8001/detect
+        - URL_YOLO=http://yoloe:8001/detect
         - URL_MIDAS=http://midas:8002/depth
         - URL_LLM=http://llm:8080/v1/chat/completions
         depends_on:

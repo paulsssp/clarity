@@ -16,6 +16,8 @@ CLASES = [
     "fence",
     "car",
     "bus",
+    "bike",
+    "motorcycle",
     "crosswalk",
     "pothole"   
 ]
@@ -33,6 +35,8 @@ TRADUCCIONES = {
     "fence": "valla",
     "car": "coche",
     "bus": "autobús",
+    "bike": "bicicleta",
+    "motorcycle": "motocicleta",
     "crosswalk": "paso de peatones",
     "pothole": "bache"
 }
