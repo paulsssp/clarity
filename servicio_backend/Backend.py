@@ -5,6 +5,7 @@ import os
 import cv2
 import numpy as np
 import json
+import time
 
 app = FastAPI(title="Servicio Backend")
 
@@ -34,6 +35,7 @@ def traducir_distancia(valor_pixel):
 
 @app.post("/analizar_escena")
 async def analizar_escena(file: UploadFile = File(...)):
+    inicio = time.perf_counter()
     imagen_bytes = await file.read()
     
     # Averiguamos el ancho de la imagen para calcular posiciones
@@ -101,7 +103,9 @@ async def analizar_escena(file: UploadFile = File(...)):
         "temperature": 0.3,
         "max_tokens": 80
     }
-
+    
+    inicio_llm = time.perf_counter()
+    
     # 5. Consultar al LLM
     respuesta_final = "No se pudo analizar la escena."
     async with httpx.AsyncClient(timeout=30.0) as client:
@@ -111,6 +115,11 @@ async def analizar_escena(file: UploadFile = File(...)):
                 respuesta_final = res_llm.json()["choices"][0]["message"]["content"]
         except Exception as e:
             respuesta_final = f"Error en LLM: {str(e)}"
+            
+    final_llm = time.perf_counter()
+    print(f"Tiempo procesamiento llm: {final_llm - inicio_llm:.2f} segundos")
+    print(f"Tiempo total procesamiento: {final_llm - inicio:.2f} segundos")
+    
 
     # 6. Devolver el resultado completo
     return {
