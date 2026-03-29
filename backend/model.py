@@ -6,7 +6,7 @@ def preprocess_image(file_path):
 
 def predict_environment(file_path):
     # llamar a yolo
-    detections = ["semaforo_verde", "paso_de_cebra"] 
+    detections = ["paso_de_cebra"] 
     return detections
 
 # modificar que retorne mas de una frase si hay mas de un objeto analizado
