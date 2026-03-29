@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +30,50 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+class ClarityService {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final String baseUrl = "http://TU_IP:5000"; // Cambia por tu IP de Manjaro
 
+  Future<void> analyzeAndSpeak(String imagePath) async {
+    try {
+      // 1. Enviar imagen al backend (/analyze)
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/analyze'));
+      request.files.add(await http.MultipartFile.fromPath('file', imagePath));
+      
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      var data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        String audioFileName = data['audio_file']; // El nombre que enviamos desde Flask
+
+        // 2. Configurar el "borrado" automático al terminar de sonar
+        _audioPlayer.onPlayerComplete.listen((event) async {
+          print("Audio terminado. Enviando orden de borrado...");
+          await _deleteAudioFromServer(audioFileName);
+        });
+
+        // 3. Reproducir el audio desde la URL de tu backend
+        Source urlSource = UrlSource('$baseUrl/get_audio/$audioFileName');
+        await _audioPlayer.play(urlSource);
+      }
+    } catch (e) {
+      print("Error en el proceso: $e");
+    }
+  }
+
+  // Función interna para llamar a tu ruta /clean_audio
+  Future<void> _deleteAudioFromServer(String fileName) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/clean_audio/$fileName'));
+      if (response.statusCode == 200) {
+        print("Servidor: Archivo $fileName borrado con éxito.");
+      }
+    } catch (e) {
+      print("No se pudo borrar el archivo en el servidor: $e");
+    }
+  }
+}
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
