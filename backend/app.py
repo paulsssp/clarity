@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import request
 from flask import jsonify
 from flask import send_file
 from utils import *
@@ -17,13 +18,15 @@ def health_check():
         "system": "Clarity Backend"
     }), 200
 
-@app.route('/analyze/<image>', methods=['POST'])
+@app.route('/analyze', methods=['POST'])
 def analyze(image):
     save_log("Procesando imagen")
     try:
         # especificar de donde viene  
-        file_path = upload_image(image)
-        preprocess_image(file_path)
+        # file_path = os.path.join("../images", image)
+        file = request.files['file']
+        file_path = upload_image(file)
+        # preprocess_image(file_path)
         detections = predict_environment(file_path)
         advice = calculate_route_advice(detections)
         get_audio_description(advice)
