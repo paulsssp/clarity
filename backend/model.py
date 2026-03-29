@@ -9,6 +9,7 @@ def predict_environment(file_path):
     detections = ["semaforo_verde", "paso_de_cebra"] 
     return detections
 
+# modificar que retorne mas de una frase si hay mas de un objeto analizado
 def calculate_route_advice(detections):
     save_log("ML -> Calculando ruta...")
     if "obstaculo_derecha" in detections:
