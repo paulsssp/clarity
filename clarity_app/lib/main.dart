@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_tts/flutter_tts.dart'; // <-- NUEVO: Importamos el locutor
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'dart:convert';
+import 'dart:io';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +46,33 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _inicializarApp();
+  }
+
+  Future<void> _enviarImagen(XFile image) async {
+    final url = Uri.parse('http://192.168.1.44:5000/analyze');
+    try {
+      var request = http.MultipartRequest('POST',url);
+      request.files.add(await http.MultipartFile.fromPath('file', image.path, contentType: MediaType('image', 'jpeg')));
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      String descripcion = data['description'];
+
+      // 5. Usar el TTS que ya tienes en tu código para hablar
+      await flutterTts.speak(descripcion);
+      
+      setState(() {
+        mensajeState = descripcion;
+      });
+    } else {
+      print("Error en el servidor: ${response.statusCode}");
+    }
+
+    } catch(e) {
+      print("Error de conexión: $e");
+      await flutterTts.speak("Error al conectar con el servidor");
+    }
   }
 
   void _inicializarApp() async {
