@@ -19,7 +19,7 @@ def health_check():
     }), 200
 
 @app.route('/analyze', methods=['POST'])
-def analyze(image):
+def analyze():
     save_log("Procesando imagen")
     try:
         # especificar de donde viene  

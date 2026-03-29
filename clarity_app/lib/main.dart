@@ -48,32 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _inicializarApp();
   }
 
-  Future<void> _enviarImagen(XFile image) async {
-    final url = Uri.parse('http://192.168.1.44:5000/analyze');
-    try {
-      var request = http.MultipartRequest('POST',url);
-      request.files.add(await http.MultipartFile.fromPath('file', image.path, contentType: MediaType('image', 'jpeg')));
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      String descripcion = data['description'];
-
-      // 5. Usar el TTS que ya tienes en tu código para hablar
-      await flutterTts.speak(descripcion);
-      
-      setState(() {
-        mensajeState = descripcion;
-      });
-    } else {
-      print("Error en el servidor: ${response.statusCode}");
-    }
-
-    } catch(e) {
-      print("Error de conexión: $e");
-      await flutterTts.speak("Error al conectar con el servidor");
-    }
-  }
+  
 
   void _inicializarApp() async {
     // 1. Mirar si ya tenemos los permisos guardados
@@ -176,6 +151,31 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   bool _isRecording = false;
   XFile? _videoFile;
 
+  final FlutterTts flutterTts = FlutterTts();
+  Future<void> _enviarImagen(XFile image) async {
+    final url = Uri.parse('http://192.168.1.44:5000/analyze');
+    try {
+      var request = http.MultipartRequest('POST', url);
+      request.files.add(await http.MultipartFile.fromPath(
+        'file', image.path,
+        contentType: MediaType('image', 'jpeg'),
+      ));
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        String descripcion = data['description'];
+        await flutterTts.speak(descripcion); // ✅ Esto faltaba
+        print("Descripción: $descripcion");
+      } else {
+        print("Error en el servidor: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error de conexión: $e");
+      await flutterTts.speak("Error al conectar con el servidor");
+    }
+  }
   @override
   void initState() {
     super.initState();
@@ -210,6 +210,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     try {
       final image = await _cameraController!.takePicture();
       print("¡FOTO TOMADA! Guardada en: ${image.path}");
+      await _enviarImagen(image); // ✅ Añadir esto
       // Aquí en el futuro enviaremos "image.path" a la IA
     } catch (e) {
       print("Error al tomar la foto: $e");
