@@ -35,7 +35,7 @@ def clean_temporary_files(file_path):
             save_log(f"Error al borrar {file_path}: {e}")
             return False
     else:
-        save_log(f"El archivo {file_path} no existe.")
+        save_log(f"El archivo {file_path} no existe, no se puede borrar.")
         return False
 
 def generate_audio(text):
@@ -54,7 +54,7 @@ def generate_audio(text):
     try:
         tts = gTTS(text=text, lang='es')
         tts.save(clean_path)
-        save_log(f"Audio generado con éxito: {clean_path}")
+        save_log(f"Audio generado con éxito, guardado en: {clean_path}")
         return clean_path
     except Exception as e:
         save_log(f"Error en gTTS al guardar {clean_path}: {e}")

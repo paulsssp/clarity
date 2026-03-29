@@ -29,7 +29,10 @@ def analyze():
         # preprocess_image(file_path)
         detections = predict_environment(file_path)
         advice = calculate_route_advice(detections)
-        get_audio_description(advice)
+        clean_image(file_path)
+
+        audio_path = generate_audio(advice)
+        clean_audio(audio_path)
         
         return jsonify({
             "status": "success",
@@ -70,6 +73,7 @@ def clean_audio(file_path):
     try:
         deleted = clean_temporary_files(f"../audios/{file_path}")
         if deleted:
+            save_log(f"Se ha borrado {file_path}")
             return jsonify({
                 "message": f"Archivo {file_path} borrado"
             }), 200    
@@ -87,8 +91,9 @@ def clean_audio(file_path):
 @app.route('/clean_image/<file_path>', methods=['GET'])
 def clean_image(file_path):
     try:
-        deleted = clean_temporary_files((f"../images/{file_path}"))
+        deleted = clean_temporary_files((f"{file_path}"))
         if deleted:
+            save_log(f"Se ha borrado {file_path}")
             return jsonify({
                 "message": f"Archivo {file_path} borrado"
             }), 200     
