@@ -1,0 +1,35 @@
+# =========================
+# Python y Entornos
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# =========================
+# Modelos de IA
+# =========================
+*.pt
+*.gguf
+*.onnx
+/modelos/
+best.pt
+
+# =========================
+# Variables de entorno
+# =========================
+.env
+
+# =========================
+# Archivos del sistema
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDEs (VSCode, PyCharm)
+# =========================
+.vscode/
+.idea/
