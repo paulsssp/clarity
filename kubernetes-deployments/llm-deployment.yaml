@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: clarity
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-deployment
+  namespace: clarity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm
+  template:
+    metadata:
+      labels:
+        app: llm
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: persian
+      containers:
+      - name: llamacpp-server
+        image: ghcr.io/ggml-org/llama.cpp:server
+        args:
+          - "-m"
+          - "/models/Qwen3.5-2B-Q4_K_M.gguf"
+          - "--host"
+          - "0.0.0.0"
+          - "--port"
+          - "8080"
+          - "-c"
+          - "2048"
+          - "--chat-template-kwargs"
+          - '{"enable_thinking":false}'
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: model-volume
+          mountPath: /models
+      volumes:
+      - name: model-volume
+        hostPath:
+          path: /opt/modelos
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm
+  namespace: clarity
+spec:
+  selector:
+    app: llm
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
