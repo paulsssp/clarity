@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-backend-deployment
+  namespace: clarity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm-backend
+  template:
+    metadata:
+      labels:
+        app: llm-backend
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: meowth
+      containers:
+      - name: llm-backend-container
+        image: ghcr.io/paulsssp/clarity-servicio_backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: URL_YOLO
+          value: "http://yoloe:8001/detect"
+        - name: URL_MIDAS
+          value: "http://midas:8002/depth"
+        - name: URL_LLM
+          value: "http://llm:8080/v1/chat/completions"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-backend
+  namespace: clarity
+spec:
+  selector:
+    app: llm-backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

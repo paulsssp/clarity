@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yoloe-deployment
+  namespace: clarity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yoloe
+  template:
+    metadata:
+      labels:
+        app: yoloe
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: meowth
+      containers:
+      - name: yoloe-container
+        image: ghcr.io/paulsssp/clarity-servicio_yoloe:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yoloe
+  namespace: clarity
+spec:
+  selector:
+    app: yoloe
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: 8001
