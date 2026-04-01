@@ -1,14 +1,12 @@
 from flask import Flask
+from flask import request
 from flask import jsonify
 from flask import send_file
+import os
 from utils import *
 from model import *
 
 app = Flask(__name__)
-
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
 
 @app.route('/check_status', methods=['GET'])
 def health_check():
@@ -17,21 +15,29 @@ def health_check():
         "system": "Clarity Backend"
     }), 200
 
-@app.route('/analyze/<image>', methods=['POST'])
-def analyze(image):
+@app.route('/analyze', methods=['POST'])
+def analyze():
     save_log("Procesando imagen")
     try:
         # especificar de donde viene  
+        if 'file' not in request.files:
+            return jsonify({"error": "No se envió ninguna imagen"}), 400
+        image = request.files['file']
         file_path = upload_image(image)
-        preprocess_image(file_path)
+
         detections = predict_environment(file_path)
         advice = calculate_route_advice(detections)
-        get_audio_description(advice)
+
+        audio_full_path = generate_audio(advice)
+        audio_filename = os.path.basename(audio_full_path)
         
+        clean_temporary_files(file_path)        
+
         return jsonify({
             "status": "success",
-            "message": "Imagen procesada con éxito",
-            "description": advice
+            "description": advice,
+            "audio_file": audio_filename,
+            "datos_tecnicos": detections
         }), 200
     
     except Exception as e:
@@ -99,13 +105,6 @@ def clean_image(file_path):
         return jsonify({
             "error": str(e)
         }), 500
-
-@app.route('/test_log', methods=['GET'])
-def test_log():
-    save_log("Testeo de save_log")
-    return jsonify({
-        "message": "Funciona"
-    }), 200
 
 if __name__ == '__main__':
     # host='0.0.0.0' para que la VM sea accesible desde fuera
