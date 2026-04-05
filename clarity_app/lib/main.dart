@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_tts/flutter_tts.dart'; // <-- NUEVO: Importamos el locutor
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'dart:convert';
+import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +30,50 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+class ClarityService {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final String baseUrl = "http://192.168.1.38:5000"; // Cambia por tu IP de Manjaro
 
+  Future<void> analyzeAndSpeak(String imagePath) async {
+    try {
+      // 1. Enviar imagen al backend (/analyze)
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/analyze'));
+      request.files.add(await http.MultipartFile.fromPath('file', imagePath));
+      
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      var data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        String audioFileName = data['audio_file']; // El nombre que enviamos desde Flask
+
+        // 2. Configurar el "borrado" automático al terminar de sonar
+        _audioPlayer.onPlayerComplete.listen((event) async {
+          print("Audio terminado. Enviando orden de borrado...");
+          await _deleteAudioFromServer(audioFileName);
+        });
+
+        // 3. Reproducir el audio desde la URL de tu backend
+        Source urlSource = UrlSource('$baseUrl/get_audio/$audioFileName');
+        await _audioPlayer.play(urlSource);
+      }
+    } catch (e) {
+      print("Error en el proceso: $e");
+    }
+  }
+
+  // Función interna para llamar a tu ruta /clean_audio
+  Future<void> _deleteAudioFromServer(String fileName) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/clean_audio/$fileName'));
+      if (response.statusCode == 200) {
+        print("Servidor: Archivo $fileName borrado con éxito.");
+      }
+    } catch (e) {
+      print("No se pudo borrar el archivo en el servidor: $e");
+    }
+  }
+}
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
@@ -43,6 +91,8 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _inicializarApp();
   }
+
+  
 
   void _inicializarApp() async {
     // 1. Mirar si ya tenemos los permisos guardados
@@ -143,8 +193,39 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   
   // Variables para controlar el vídeo
   bool _isRecording = false;
-  XFile? _videoFile;
+  Timer? _captureTimer;
+  final int _intervaloSeg = 5;
+  bool _enviandoImagen = false;
+  final FlutterTts flutterTts = FlutterTts();
+  Future<void> _enviarImagen(XFile image) async {
+    final url = Uri.parse('http://192.168.1.38:5000/analyze');
+    if (_enviandoImagen) {
+      print("Ya hay una petición en curso, saltando frame");
+      return;
+    }
 
+    _enviandoImagen = true;
+    try {
+      var request = http.MultipartRequest('POST', url);
+      request.files.add(await http.MultipartFile.fromPath(
+        'file', image.path,
+        contentType: MediaType('image', 'jpeg'),
+      ));
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        String descripcion = data['description'];
+        await flutterTts.speak(descripcion); // ✅ Esto faltaba
+        print("Descripción: $descripcion");
+      } else {
+        print("Error en el servidor: ${response.statusCode}");
+      }
+    } finally {
+        _enviandoImagen = false;
+      }
+  }
   @override
   void initState() {
     super.initState();
@@ -179,6 +260,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     try {
       final image = await _cameraController!.takePicture();
       print("¡FOTO TOMADA! Guardada en: ${image.path}");
+      await _enviarImagen(image); // ✅ Añadir esto
       // Aquí en el futuro enviaremos "image.path" a la IA
     } catch (e) {
       print("Error al tomar la foto: $e");
@@ -186,37 +268,45 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   }
 
   // === FUNCIONES PARA VÍDEO ===
-  Future<void> _comenzarAGrabar() async {
+  void _comenzarAGrabar() {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
+
+    setState(() => _isRecording = true);
+
+    // Toma una foto inmediatamente al pulsar
+    _tomarFotoYEnviar();
+
+    // Luego repite cada X segundos
+    _captureTimer = Timer.periodic(
+      Duration(seconds: _intervaloSeg),
+      (_) => _tomarFotoYEnviar(),
+    );
+
+    print("Captura periódica iniciada cada $_intervaloSeg segundos");
+  }
+
+  void _detenerGrabacion() {
+    _captureTimer?.cancel();
+    _captureTimer = null;
+    setState(() => _isRecording = false);
+    print("Captura periódica detenida");
+  }
+
+  Future<void> _tomarFotoYEnviar() async {
     if (_cameraController == null || !_cameraController!.value.isInitialized) return;
 
     try {
-      await _cameraController!.startVideoRecording();
-      setState(() {
-        _isRecording = true;
-      });
-      print("Grabación de VÍDEO iniciada...");
+      final image = await _cameraController!.takePicture();
+      print("Foto periódica tomada: ${image.path}");
+      await _enviarImagen(image);
     } catch (e) {
-      print("Error al empezar a grabar: $e");
-    }
-  }
-
-  Future<void> _detenerGrabacion() async {
-    if (_cameraController == null || !_isRecording) return;
-
-    try {
-      final file = await _cameraController!.stopVideoRecording();
-      setState(() {
-        _isRecording = false;
-        _videoFile = file;
-      });
-      print("VÍDEO DETENIDO. Guardado en: ${_videoFile!.path}");
-    } catch (e) {
-      print("Error al parar de grabar: $e");
+      print("Error en captura periódica: $e");
     }
   }
 
   @override
   void dispose() {
+    _captureTimer?.cancel();
     _cameraController?.dispose();
     super.dispose();
   }
