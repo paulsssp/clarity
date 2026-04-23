@@ -10,3 +10,17 @@ Este repositorio contiene la arquitectura de microservicios del backend para la 
 3. **Servicio MiDaS (PyTorch):** Red neuronal que estima el mapa de profundidad monocular de la escena. `(Puerto 8002)`
 
 4. **Servicio LLM (Qwen 0.8B/1.5B):** Servidor local basado en `llama.cpp` que redacta la advertencia final basándose en el JSON estructurado. `(Puerto 8080)`
+
+
+# TODO: instrucciones para nosotros
+terminal1:
+cd servicio_backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+flask --app app run --host=0.0.0.0 --port=5000
+
+terminal2:
+cd clarity_app
+flutter run
