@@ -27,8 +27,11 @@ flutter run
 
 ## **Instrucciones para probar la aplicación en el móvil (Android)**
 
-1. **Abrir Configuración/Ajustes en el dispositivo móvil:** Ir a Acerca del teléfono > Activar opciones de desarrollador (depende del dispositivo)
-2. **Activar Depuración USB**
+1.  **Abrir Configuración/Ajustes en el dispositivo móvil:** Ir a Acerca del teléfono > Activar opciones de desarrollador (depende del dispositivo)
+2.  **Activar Depuración USB**
+3.  **Activar Instalar vía USB**
+4.  **Conectar con cable USB y elegir "Transferir archivos**
+5.  **Comprobar en el ordenador con "adb devices" o "flutter devices" si el dispositivo es detectado**
 
 ## **Instrucciones para ejecutar aplicación en el móvil conectado con cable USB**
 
