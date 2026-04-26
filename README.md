@@ -24,3 +24,16 @@ flask --app app run --host=0.0.0.0 --port=5000
 terminal2:
 cd clarity_app
 flutter run
+
+## **Instrucciones para probar la aplicación en el móvil (Android)**
+
+1. **Abrir Configuración/Ajustes en el dispositivo móvil:** Ir a Acerca del teléfono > Activar opciones de desarrollador (depende del dispositivo)
+2. **Activar Depuración USB**
+
+## **Instrucciones para ejecutar aplicación en el móvil conectado con cable USB**
+
+Ejecutar en terminal:
+    docker compose up -d
+    adb reverse tcp:5000 tcp:5000
+    cd clarity_app
+    flutter run

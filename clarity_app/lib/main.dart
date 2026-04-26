@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
 }
 class ClarityService {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final String baseUrl = "http://192.168.1.38:5000"; // Cambia por tu IP de Manjaro
+  final String baseUrl = "http://localhost:5000"; // Cambia por tu IP de Manjaro
 
   Future<void> analyzeAndSpeak(String imagePath) async {
     try {
@@ -198,7 +198,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   bool _enviandoImagen = false;
   final FlutterTts flutterTts = FlutterTts();
   Future<void> _enviarImagen(XFile image) async {
-    final url = Uri.parse('http://192.168.1.38:5000/analyze');
+    final url = Uri.parse('http://localhost:5000/analyze');
     if (_enviandoImagen) {
       print("Ya hay una petición en curso, saltando frame");
       return;
