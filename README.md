@@ -36,6 +36,7 @@ flutter run
 ## **Instrucciones para ejecutar aplicación en el móvil conectado con cable USB**
 
 Ejecutar en terminal:
+```bash
     docker compose up -d
     adb reverse tcp:5000 tcp:5000
     cd clarity_app
