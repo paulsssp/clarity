@@ -31,9 +31,9 @@ spec:
           - "--port"
           - "8080"
           - "-c"
-          - "2048"
+          - "512"
           - "-t"
-          - "2"
+          - "4"
           - "--chat-template-kwargs"
           - '{"enable_thinking":false}'
         ports:
