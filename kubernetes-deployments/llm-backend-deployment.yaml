@@ -20,7 +20,7 @@ spec:
         image: ghcr.io/paulsssp/clarity-servicio_backend:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 8000
+        - containerPort: 5000
         env:
         - name: URL_YOLO
           value: "http://yoloe:8001/detect"
@@ -39,5 +39,5 @@ spec:
     app: llm-backend
   ports:
     - protocol: TCP
-      port: 8000
-      targetPort: 8000
+      port: 5000
+      targetPort: 5000
