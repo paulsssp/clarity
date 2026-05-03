@@ -10,10 +10,19 @@ URL_YOLO = os.getenv("URL_YOLO", "http://localhost:8001/detectar")
 URL_MIDAS = os.getenv("URL_MIDAS", "http://localhost:8002/profundidad")
 URL_LLM = os.getenv("URL_LLM", "http://localhost:8080/v1/chat/completions")
 
+PROMPT = """Eres un asistente de accesibilidad visual rápido y directo.
+Tu única tarea es leer un JSON con datos de objetos detectados.
+
+REGLAS ESTRICTAS:
+1. Responde SOLO con la frase descriptiva.
+2. Prioriza los objetos marcados como "cerca".
+3. No inventes objetos ni detalles que no estén en el JSON.
+4. Usa un tono neutro y directo (ej. "Tienes cerca una persona delante y lejos un coche a la derecha")."""
+
 def traducir_posicion(x1, x2, ancho_img):
     centro_x = (x1 + x2) / 2
-    if centro_x < (ancho_img * 0.33): return "izquierda"
-    elif centro_x > (ancho_img * 0.66): return "derecha"
+    if centro_x < (ancho_img * 0.25): return "izquierda"
+    elif centro_x > (ancho_img * 0.75): return "derecha"
     else: return "delante"
 
 def traducir_distancia(valor_pixel):
@@ -25,7 +34,6 @@ def predict_environment(file_path):
     """Fusiona YOLO y MiDaS para entender la escena"""
     save_log(f"Analizando escena técnica: {file_path}")
     
-    # Leer imagen para dimensiones
     img_cv = cv2.imread(file_path)
     alto_img, ancho_img, _ = img_cv.shape
     
@@ -33,7 +41,6 @@ def predict_environment(file_path):
         img_bytes = f.read()
         files = {"file": ("imagen.jpg", img_bytes, "image/jpeg")}
         
-        # Peticiones (Síncronas para Flask)
         try:
             res_yolo = requests.post(URL_YOLO, files=files, timeout=10)
             res_midas = requests.post(URL_MIDAS, files=files, timeout=10)
@@ -71,7 +78,7 @@ def calculate_route_advice(escena_estructurada):
         "messages": [
             {
                 "role": "system", 
-                "content": "Responde con UNA sola frase natural, breve y directa describiendo la escena para un ciego. NO saludes."
+                "content": PROMPT
             },
             {"role": "user", "content": json_para_llm}
         ],
