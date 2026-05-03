@@ -40,7 +40,7 @@ services:
         build: ./servicio_backend
         container_name: backend_container
         ports:
-        - "8000:8000"
+        - "5000:5000"
         restart: unless-stopped
         environment:
 #        - URL_YOLO=http://yolo:8001/detect
