@@ -1,4 +1,4 @@
-name: Build and Push Docker Images to GHCR
+name: Build and Push to GHCR & Build APK
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
       - 'servicio_backend/**'
       - 'servicio_midas/**'
       - 'servicio_yoloe/**'
+      - 'clarity_app/**'
 
 env:
   REGISTRY: ghcr.io
@@ -46,3 +47,40 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.REPO }}-${{ matrix.service }}:latest
             ${{ env.REGISTRY }}/${{ env.REPO }}-${{ matrix.service }}:${{ github.sha }}
+
+  build-flutter-apk:
+    name: Build Flutter APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Android builds require Java
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # Sets up the Flutter SDK
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        working-directory: ./clarity_app
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: ./clarity_app
+        run: flutter build apk --release
+
+      - name: Upload APK as Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clarity-app-release
+          path: clarity_app/build/**/outputs/flutter-apk/app-release.apk
+          retention-days: 90

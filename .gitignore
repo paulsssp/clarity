@@ -41,3 +41,10 @@ images/
 audios/
 backend/.venv/
 backend/__pycache__/
+
+
+# ========================
+# Flutter / Android Builds
+# ========================
+clarity_app/build/
+
