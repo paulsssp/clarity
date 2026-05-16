@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_tts/flutter_tts.dart'; // <-- NUEVO: Importamos el locutor
+import 'package:flutter_tts/flutter_tts.dart'; 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
 }
 class ClarityService {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final String baseUrl = "http://localhost:5000"; // Cambia por tu IP de Manjaro
+  final String baseUrl = "http://localhost:5000"; 
 
   Future<void> analyzeAndSpeak(String imagePath) async {
     try {
@@ -45,7 +45,7 @@ class ClarityService {
       var data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        String audioFileName = data['audio_file']; // El nombre que enviamos desde Flask
+        String audioFileName = data['audio_file']; 
 
         // 2. Configurar el "borrado" automático al terminar de sonar
         _audioPlayer.onPlayerComplete.listen((event) async {
@@ -62,7 +62,7 @@ class ClarityService {
     }
   }
 
-  // Función interna para llamar a tu ruta /clean_audio
+  // Función interna para llamar a /clean_audio
   Future<void> _deleteAudioFromServer(String fileName) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/clean_audio/$fileName'));
@@ -217,7 +217,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         String descripcion = data['description'];
-        await flutterTts.speak(descripcion); // ✅ Esto faltaba
+        await flutterTts.speak(descripcion); 
         print("Descripción: $descripcion");
       } else {
         print("Error en el servidor: ${response.statusCode}");
@@ -255,13 +255,12 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   // === FUNCIÓN PARA FOTOS ===
   Future<void> _tomarFoto() async {
     if (_cameraController == null || !_cameraController!.value.isInitialized) return;
-    if (_isRecording) return; // Por seguridad, no dejamos hacer foto si está grabando
+    if (_isRecording) return; 
 
     try {
       final image = await _cameraController!.takePicture();
       print("¡FOTO TOMADA! Guardada en: ${image.path}");
-      await _enviarImagen(image); // ✅ Añadir esto
-      // Aquí en el futuro enviaremos "image.path" a la IA
+      await _enviarImagen(image); 
     } catch (e) {
       print("Error al tomar la foto: $e");
     }
@@ -273,10 +272,8 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
     setState(() => _isRecording = true);
 
-    // Toma una foto inmediatamente al pulsar
     _tomarFotoYEnviar();
 
-    // Luego repite cada X segundos
     _captureTimer = Timer.periodic(
       Duration(seconds: _intervaloSeg),
       (_) => _tomarFotoYEnviar(),

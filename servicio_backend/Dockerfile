@@ -9,7 +9,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 4. Copiamos el código del orquestador
-COPY *.py .
+COPY *.py ./
 
 # 5. Exponemos el puerto 5000
 EXPOSE 5000
