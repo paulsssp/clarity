@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter/services.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -226,7 +227,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                  texto.contains('empezar grabacion')) {
         if (!_isRecording) _comenzarAGrabar();
       } else if (texto.contains('detener grabación') ||
-                 texto.contains('para grabación') ||
+                 texto.contains('parar grabación') ||
                  texto.contains('detener grabacion') ||
                  texto.contains('parar grabacion')) {
         if (_isRecording) _detenerGrabacion();
@@ -240,7 +241,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     final camera = cameras.first;
     _cameraController = CameraController(
       camera,
-      ResolutionPreset.medium,
+      ResolutionPreset.high,
       enableAudio: true, 
     );
 
@@ -324,8 +325,24 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
         fit: StackFit.expand,
         children: [
           // CAPA 1: Cámara Live
-          CameraPreview(_cameraController!),
-
+          OrientationBuilder(
+            builder: (context, orientation) {
+              return SizedBox.expand(
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: orientation == Orientation.portrait
+                        ? _cameraController!.value.previewSize!.height
+                        : _cameraController!.value.previewSize!.width,
+                    height: orientation == Orientation.portrait
+                        ? _cameraController!.value.previewSize!.width
+                        : _cameraController!.value.previewSize!.height,
+                    child: CameraPreview(_cameraController!),
+                  ),
+                ),
+              );
+            },
+          ),
           // CAPA 2: Botones de Foto/Vídeo
           Align(
             alignment: Alignment.bottomCenter,
