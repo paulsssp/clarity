@@ -7,6 +7,7 @@ import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,50 +31,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-class ClarityService {
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  final String baseUrl = "http://localhost:5000"; 
 
-  Future<void> analyzeAndSpeak(String imagePath) async {
-    try {
-      // 1. Enviar imagen al backend (/analyze)
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/analyze'));
-      request.files.add(await http.MultipartFile.fromPath('file', imagePath));
-      
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-      var data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        String audioFileName = data['audio_file']; 
-
-        // 2. Configurar el "borrado" automático al terminar de sonar
-        _audioPlayer.onPlayerComplete.listen((event) async {
-          print("Audio terminado. Enviando orden de borrado...");
-          await _deleteAudioFromServer(audioFileName);
-        });
-
-        // 3. Reproducir el audio desde la URL de tu backend
-        Source urlSource = UrlSource('$baseUrl/get_audio/$audioFileName');
-        await _audioPlayer.play(urlSource);
-      }
-    } catch (e) {
-      print("Error en el proceso: $e");
-    }
-  }
-
-  // Función interna para llamar a /clean_audio
-  Future<void> _deleteAudioFromServer(String fileName) async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/clean_audio/$fileName'));
-      if (response.statusCode == 200) {
-        print("Servidor: Archivo $fileName borrado con éxito.");
-      }
-    } catch (e) {
-      print("No se pudo borrar el archivo en el servidor: $e");
-    }
-  }
-}
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
@@ -92,21 +50,20 @@ class _MyHomePageState extends State<MyHomePage> {
     _inicializarApp();
   }
 
-  
 
   void _inicializarApp() async {
     // 1. Mirar si ya tenemos los permisos guardados
     PermissionStatus statusCamara = await Permission.camera.status;
     PermissionStatus statusMicrofono = await Permission.microphone.status;
 
-    // Si ambos permisos YA están concedidos de antes...
+    // Si ambos permisos están concedidos de antes:
     if (statusCamara.isGranted && statusMicrofono.isGranted) {
-      // Nos saltamos la voz, buscamos la cámara y pasamos a la siguiente pantalla
+      // Nos saltamos la voz, buscamos la cámara y pasamos a inicializar la app
       await _irAPantallaPrincipal();
-      return; // El "return" hace que la función termine aquí y no lea lo de abajo
+      return; // Actúa como "break"
     }
 
-    // 2. SI NO HAY PERMISOS: Configuramos la voz y damos la bienvenida
+    // 2. Si no hay permisos: Configuramos la voz y damos la bienvenida
     await flutterTts.setLanguage("es-ES");
     await flutterTts.setPitch(1.0);
     // Usamos la voz solo la primera vez
@@ -118,10 +75,12 @@ class _MyHomePageState extends State<MyHomePage> {
       Permission.microphone,
     ].request();
 
-    // 3. COMPROBAR QUÉ HA RESPONDIDO EL USUARIO
+    // 3. Se comprueba que ambos permisos se han dado
     if (statuses[Permission.camera]!.isGranted && statuses[Permission.microphone]!.isGranted) {
       await _irAPantallaPrincipal();
-    } else {
+
+    } 
+    else {
       setState(() {
         mensajeState = "Clarity requiere permisos para funcionar";
       });
@@ -129,17 +88,12 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  // --- NUEVA FUNCIÓN DE APOYO ---
-  // He sacado este trozo aquí para no repetir código arriba
   Future<void> _irAPantallaPrincipal() async {
     try {
       cameras = await availableCameras();
       setState(() {
         mensajeState = "Iniciando cámara...";
       });
-      
-      // Una pausa muy cortita para que la transición sea suave
-      await Future.delayed(const Duration(milliseconds: 500));
       
       if (mounted) {
         Navigator.pushReplacement(
@@ -188,19 +142,19 @@ class PantallaPrincipal extends StatefulWidget {
 }
 
 class _PantallaPrincipalState extends State<PantallaPrincipal> {
+  late stt.SpeechToText _speech;
+  bool listen = false;
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
-  
-  // Variables para controlar el vídeo
-  bool _isRecording = false;
+    bool _isRecording = false;
   Timer? _captureTimer;
   final int _intervaloSeg = 5;
   bool _enviandoImagen = false;
   final FlutterTts flutterTts = FlutterTts();
+
   Future<void> _enviarImagen(XFile image) async {
-    final url = Uri.parse('http://localhost:5000/analyze');
+    final url = Uri.parse('http://172.19.247.79:5000/analyze');
     if (_enviandoImagen) {
-      print("Ya hay una petición en curso, saltando frame");
       return;
     }
 
@@ -226,17 +180,67 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
         _enviandoImagen = false;
       }
   }
+
   @override
   void initState() {
     super.initState();
     _iniciarCamara();
+    _inicializarSTT();
   }
+
+  void _inicializarSTT() async {
+    _speech = stt.SpeechToText();
+    bool disponible = await _speech.initialize(
+      onError: (error) => print("STT Error: $error"),
+      onStatus: (status) {
+        // Si el reconocedor se detiene inesperadamente, lo reiniciamos
+        if (status == 'done' || status == 'notListening') {
+          _escucharComandos();
+        }
+      },
+    );
+
+    if (disponible) {
+      _escucharComandos();
+    } 
+  }
+
+  void _escucharComandos() async {
+  if (!_speech.isAvailable) return;
+
+  setState(() => listen = true);
+
+  await _speech.listen(
+    localeId: 'es-ES',
+    listenFor: const Duration(seconds: 30),
+    pauseFor: const Duration(seconds: 5),
+    onResult: (resultado) {
+      final texto = resultado.recognizedWords.toLowerCase();
+      print("Voz reconocida: $texto");
+
+      if (texto.contains('tomar foto')) {
+        _tomarFoto();
+      } else if (texto.contains('comenzar grabación') ||
+                 texto.contains('empezar grabación') ||
+                 texto.contains('comenzar grabacion') ||
+                 texto.contains('empezar grabacion')) {
+        if (!_isRecording) _comenzarAGrabar();
+      } else if (texto.contains('detener grabación') ||
+                 texto.contains('para grabación') ||
+                 texto.contains('detener grabacion') ||
+                 texto.contains('parar grabacion')) {
+        if (_isRecording) _detenerGrabacion();
+      }
+    },
+
+  );
+}
 
   void _iniciarCamara() async {
     final camera = cameras.first;
     _cameraController = CameraController(
       camera,
-      ResolutionPreset.high,
+      ResolutionPreset.medium,
       enableAudio: true, 
     );
 
@@ -252,21 +256,21 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     }
   }
 
-  // === FUNCIÓN PARA FOTOS ===
+  //Función para tomar fotos
   Future<void> _tomarFoto() async {
     if (_cameraController == null || !_cameraController!.value.isInitialized) return;
     if (_isRecording) return; 
 
     try {
       final image = await _cameraController!.takePicture();
-      print("¡FOTO TOMADA! Guardada en: ${image.path}");
+      print("¡FOTO TOMADA!");
       await _enviarImagen(image); 
     } catch (e) {
       print("Error al tomar la foto: $e");
     }
   }
 
-  // === FUNCIONES PARA VÍDEO ===
+  // Grabación vídeo
   void _comenzarAGrabar() {
     if (_cameraController == null || !_cameraController!.value.isInitialized) return;
 
@@ -279,14 +283,12 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
       (_) => _tomarFotoYEnviar(),
     );
 
-    print("Captura periódica iniciada cada $_intervaloSeg segundos");
   }
 
   void _detenerGrabacion() {
     _captureTimer?.cancel();
     _captureTimer = null;
     setState(() => _isRecording = false);
-    print("Captura periódica detenida");
   }
 
   Future<void> _tomarFotoYEnviar() async {
@@ -294,7 +296,6 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
     try {
       final image = await _cameraController!.takePicture();
-      print("Foto periódica tomada: ${image.path}");
       await _enviarImagen(image);
     } catch (e) {
       print("Error en captura periódica: $e");
@@ -305,6 +306,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   void dispose() {
     _captureTimer?.cancel();
     _cameraController?.dispose();
+    _speech.cancel(); 
     super.dispose();
   }
 
@@ -321,10 +323,10 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // CAPA 1: La cámara en vivo
+          // CAPA 1: Cámara Live
           CameraPreview(_cameraController!),
 
-          // CAPA 2: BOTONES DE CÁMARA (Abajo)
+          // CAPA 2: Botones de Foto/Vídeo
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -334,7 +336,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   
-                  // --- BOTÓN DE FOTO ---
+                  // Botón de Foto
                   if (!_isRecording) ...[
                     Semantics(
                       button: true,
@@ -357,7 +359,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                     const SizedBox(width: 40), // Espacio entre los dos botones
                   ],
 
-                  // --- BOTÓN DE VÍDEO ---
+                  // Botón de vídeo
                   Semantics(
                     button: true,
                     label: _isRecording ? "Detener grabación" : "Grabar vídeo",
@@ -393,6 +395,29 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                   ),
 
                 ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 50,
+            right: 16,
+            child: AnimatedOpacity(
+              opacity: listen ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.mic, color: Colors.greenAccent, size: 18),
+                    SizedBox(width: 6),
+                    Text("Escuchando", style: TextStyle(color: Colors.white, fontSize: 13)),
+                  ],
+                ),
               ),
             ),
           ),

@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  speech_to_text: ^7.0.0
   flutter:
     sdk: flutter
 
@@ -67,12 +68,13 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/icons/
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/logo.jpeg"
+  image_path: "assets/images/logo.png"
+  adaptive_icon_background: "#000000"      # Color de fondo para Android adaptativo
+  adaptive_icon_foreground: "assets/images/logo.png"
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
