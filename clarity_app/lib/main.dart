@@ -154,7 +154,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   final FlutterTts flutterTts = FlutterTts();
 
   Future<void> _enviarImagen(XFile image) async {
-    final url = Uri.parse('http://172.19.247.79:5000/analyze');
+    final url = Uri.parse('http://10.4.41.67:30050/analyze');
     if (_enviandoImagen) {
       return;
     }
