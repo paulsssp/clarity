@@ -1,0 +1,50 @@
+# Default values for clarity-stack
+
+namespace: clarity
+
+llm:
+  nodeSelector: {}
+  image:
+    repository: ghcr.io/ggml-org/llama.cpp
+    tag: server
+  args:
+    model: "/models/Qwen3.5-2B-Q4_K_M.gguf"
+    contextSize: "2048"
+    threads: "4"
+    chatTemplateKwargs: '{"enable_thinking":false}'
+  volumes:
+    hostPath: "/opt/modelos"
+  service:
+    type: ClusterIP
+    port: 8080
+
+midas:
+  nodeSelector: {}
+  image:
+    repository: ghcr.io/paulsssp/clarity-servicio_midas
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8002
+
+yoloe:
+  nodeSelector: {}
+  image:
+    repository: ghcr.io/paulsssp/clarity-servicio_yoloe
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8001
+
+backend:
+  nodeSelector: {}
+  image:
+    repository: ghcr.io/paulsssp/clarity-servicio_backend
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: NodePort
+    port: 5000
+    nodePort: 30050

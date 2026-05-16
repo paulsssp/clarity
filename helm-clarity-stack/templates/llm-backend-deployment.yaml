@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-backend-deployment
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm-backend
+  template:
+    metadata:
+      labels:
+        app: llm-backend
+    spec:
+      {{- with .Values.backend.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: llm-backend-container
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.backend.service.port }}
+        env:
+        - name: URL_YOLO
+          value: "http://yoloe:{{ .Values.yoloe.service.port }}/detect"
+        - name: URL_MIDAS
+          value: "http://midas:{{ .Values.midas.service.port }}/depth"
+        - name: URL_LLM
+          value: "http://llm:{{ .Values.llm.service.port }}/v1/chat/completions"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-backend
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  type: {{ .Values.backend.service.type }}
+  selector:
+    app: llm-backend
+  ports:
+    - protocol: TCP
+      port: {{ .Values.backend.service.port }}
+      targetPort: {{ .Values.backend.service.port }}
+      # Only inject the nodePort if the type is NodePort AND a nodePort value is provided
+      {{- if and (eq .Values.backend.service.type "NodePort") .Values.backend.service.nodePort }}
+      nodePort: {{ .Values.backend.service.nodePort }}
+      {{- end }}

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: midas-deployment
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: midas
+  template:
+    metadata:
+      labels:
+        app: midas
+    spec:
+      {{- with .Values.midas.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: midas-container
+        image: "{{ .Values.midas.image.repository }}:{{ .Values.midas.image.tag }}"
+        imagePullPolicy: {{ .Values.midas.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.midas.service.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: midas
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  type: {{ .Values.midas.service.type }}
+  selector:
+    app: midas
+  ports:
+    - protocol: TCP
+      port: {{ .Values.midas.service.port }}
+      targetPort: {{ .Values.midas.service.port }}

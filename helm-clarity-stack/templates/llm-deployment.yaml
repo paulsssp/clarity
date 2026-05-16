@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-deployment
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm
+  template:
+    metadata:
+      labels:
+        app: llm
+    spec:
+      {{- with .Values.llm.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: llamacpp-server
+        image: "{{ .Values.llm.image.repository }}:{{ .Values.llm.image.tag }}"
+        args:
+          - "-m"
+          - "{{ .Values.llm.args.model }}"
+          - "--host"
+          - "0.0.0.0"
+          - "--port"
+          - "{{ .Values.llm.service.port }}"
+          - "-c"
+          - "{{ .Values.llm.args.contextSize }}"
+          - "-t"
+          - "{{ .Values.llm.args.threads }}"
+          - "--chat-template-kwargs"
+          - '{{ .Values.llm.args.chatTemplateKwargs }}'
+        ports:
+        - containerPort: {{ .Values.llm.service.port }}
+        volumeMounts:
+        - name: model-volume
+          mountPath: /models
+      volumes:
+      - name: model-volume
+        hostPath:
+          path: {{ .Values.llm.volumes.hostPath }}
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  type: {{ .Values.llm.service.type }}
+  selector:
+    app: llm
+  ports:
+    - protocol: TCP
+      port: {{ .Values.llm.service.port }}
+      targetPort: {{ .Values.llm.service.port }}

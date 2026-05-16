@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yoloe-deployment
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yoloe
+  template:
+    metadata:
+      labels:
+        app: yoloe
+    spec:
+      {{- with .Values.yoloe.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: yoloe-container
+        image: "{{ .Values.yoloe.image.repository }}:{{ .Values.yoloe.image.tag }}"
+        imagePullPolicy: {{ .Values.yoloe.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.yoloe.service.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yoloe
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  type: {{ .Values.yoloe.service.type }}
+  selector:
+    app: yoloe
+  ports:
+    - protocol: TCP
+      port: {{ .Values.yoloe.service.port }}
+      targetPort: {{ .Values.yoloe.service.port }}
