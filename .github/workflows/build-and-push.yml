@@ -9,6 +9,8 @@ on:
       - 'servicio_midas/**'
       - 'servicio_yoloe/**'
       - 'clarity_app/**'
+      - 'helm-clarity-stack/**'
+      - '.github/workflows/**'
 
 env:
   REGISTRY: ghcr.io
