@@ -56,7 +56,7 @@ app = FastAPI(title="Microservicio YOLOE26")
 
 # Cargamos el modelo en memoria
 print("Cargando modelo YOLO en CPU...")
-modelo_yolo = YOLOE("yoloe-26n-seg.pt")
+modelo_yolo = YOLOE("yoloe-26m-seg.pt")
 modelo_yolo.set_classes(CLASES)
 
 @app.post("/detect")
