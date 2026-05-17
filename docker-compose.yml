@@ -1,11 +1,6 @@
+# Docker compose para ejecutar los contenedores del backend en local
+
 services:
-    # --- Microservicio de YOLO ---
-#    yolo:
-#        build: ./servicio_yolo
-#        container_name: yolo_container
-#        ports:
-#        - "8001:8001"
-#        restart: unless-stopped
 
     # --- Microservicio de YOLOE ---
     yoloe:
@@ -43,12 +38,10 @@ services:
         - "5000:5000"
         restart: unless-stopped
         environment:
-#        - URL_YOLO=http://yolo:8001/detect
         - URL_YOLO=http://yoloe:8001/detect
         - URL_MIDAS=http://midas:8002/depth
         - URL_LLM=http://llm:8080/v1/chat/completions
         depends_on:
-#        - yolo
         - yoloe
         - midas
         - llm

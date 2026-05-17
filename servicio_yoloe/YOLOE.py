@@ -19,7 +19,12 @@ CLASES = [
     "bike",
     "motorcycle",
     "crosswalk",
-    "pothole"   
+    "pothole",
+    "tree",
+    "chair",
+    "table",
+    "notebook",
+    "laptop"
 ]
 
 TRADUCCIONES = {
@@ -38,11 +43,16 @@ TRADUCCIONES = {
     "bike": "bicicleta",
     "motorcycle": "motocicleta",
     "crosswalk": "paso de peatones",
-    "pothole": "bache"
+    "pothole": "bache",
+    "tree": "árbol",
+    "chair": "silla",
+    "table": "mesa",
+    "notebook": "libreta",
+    "laptop": "portátil"
 }
 
 
-app = FastAPI(title="Microservicio YOLOE26n")
+app = FastAPI(title="Microservicio YOLOE26")
 
 # Cargamos el modelo en memoria
 print("Cargando modelo YOLO en CPU...")

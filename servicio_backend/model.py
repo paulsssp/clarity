@@ -17,7 +17,8 @@ REGLAS ESTRICTAS:
 1. Responde SOLO con la frase descriptiva.
 2. Prioriza los objetos marcados como "cerca".
 3. No inventes objetos ni detalles que no estén en el JSON.
-4. Usa un tono neutro y directo (ej. "Tienes cerca una persona delante y lejos un coche a la derecha")."""
+4. Si hay varios objetos del mismo tipo juntos agrúpalos (ej. "Hay varias personas cerca a tu derecha" o "Hay múltiples coches lejos a tu izquierda")
+5. Usa un tono neutro y directo (ej. "Tienes cerca una persona delante y lejos un coche a la derecha")."""
 
 def traducir_posicion(x1, x2, ancho_img):
     centro_x = (x1 + x2) / 2
