@@ -156,16 +156,6 @@ El flujo de despliegue es completamente automatizado:
 
 Esta arquitectura enfatiza la **facilidad de despliegue** y **mantenimiento**, lo cual es fundamental para un servicio dirigido a ayudar a personas ciegas. Con esta aproximación, el stack completo puede ser desplegado y mantenido con mínima intervención manual, reduciendo errores y garantizando disponibilidad del servicio.
 
-## Comenzando
-
-### Implementación
-
-Clarity se implementa a través de Kubernetes y Helm. Consulta los archivos de implementación específicos y la configuración del gráfico Helm para la configuración de tu infraestructura.
-
-### App Móvil
-
-La app Flutter se conecta a una instancia de backend de Clarity. Los detalles de configuración para conectividad del backend se especifican en la configuración de la app.
-
 ## Privacidad y Seguridad
 
 - **Sin Dependencia de Nube**: Todo el sistema se ejecuta en infraestructura self-hosted
